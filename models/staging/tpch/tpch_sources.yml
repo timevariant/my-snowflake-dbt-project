@@ -1,0 +1,75 @@
+version: 2
+
+sources:
+  - name: tpch
+    description: "source tpch data"
+    database: snowflake_sample_data
+    schema: tpch_sf1
+    tables:
+      - name: customer
+        description: "Customer information table"
+        columns:
+          - name: c_custkey
+            description: "Unique identifier for each customer"
+            tests:
+              - unique
+              - not_null
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - c_custkey
+                - c_phone
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
+
+      - name: orders
+        description: "Customer order information"
+        columns:
+          - name: o_orderkey
+            description: "Unique identifier for each order"
+            tests:
+              - unique
+              - not_null
+          - name: o_custkey
+            description: "Foreign key to customers table"
+            tests:
+              - relationships:
+                  to: source('tpch', 'customer')
+                  field: c_custkey
+        freshness:
+          warn_after: {count: 6, period: hour}
+          error_after: {count: 12, period: hour}
+
+      - name: lineitem
+        description: "Customer lineitem information table"
+        columns:
+          - name: l_orderkey
+            description: "order key identifier for each customer"
+            tests:
+              - not_null
+              - relationships:
+                  to: source('tpch', 'orders')
+                  field: o_orderkey
+          - name: l_partkey
+            description: "part key identifier for each customer"
+            tests:
+              - not_null
+          - name: l_suppkey
+            description: "supp key identifier for each customer"
+            tests:
+              - not_null
+          - name: l_linenumber
+            description: "linenumber identifier for each customer"
+            tests:
+              - not_null
+        tests:
+          - dbt_utils.unique_combination_of_columns:
+              combination_of_columns:
+                - l_orderkey
+                - l_partkey
+                - l_suppkey
+                - l_linenumber
+        freshness:
+          warn_after: {count: 12, period: hour}
+          error_after: {count: 24, period: hour}
